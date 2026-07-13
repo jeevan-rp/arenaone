@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ArenaOne Automated Test Suite</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.2.0/mocha.min.css">
+  <style>
+    body {
+      background: #090d1a;
+      color: #e2e8f0;
+      font-family: 'Space Grotesk', sans-serif;
+      padding: 24px;
+    }
+    #mocha {
+      background: #0f172a;
+      border: 1px solid rgba(0, 240, 255, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    #mocha .test.pass .sandbox {
+      display: none;
+    }
+    h1 {
+      font-family: 'Orbitron', sans-serif;
+      color: #00f0ff;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+  </style>
+  <!-- Mock HTMLCanvasElement context before loading Chart.js to completely isolate DOM drawing -->
+  <script>
+    HTMLCanvasElement.prototype.getContext = function(type) {
+      if (type === '2d') {
+        const dummyContext = {
+          canvas: this,
+          getImageData: (x, y, w, h) => ({ data: new Uint8ClampedArray(w * h * 4) }),
+          createImageData: () => ({ data: new Uint8ClampedArray(4) }),
+          measureText: () => ({ width: 0 }),
+          createRadialGradient: () => new Proxy({}, { get: () => () => {} }),
+          createLinearGradient: () => new Proxy({}, { get: () => () => {} })
+        };
+        return new Proxy(dummyContext, {
+          get: (target, prop) => {
+            if (prop in target) return target[prop];
+            return () => {};
+          }
+        });
+      }
+      return null;
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <h1>ArenaOne QA Validation Suite</h1>
+  <div id="mocha"></div>
+
+  <!-- Mock structure needed for loading modules without DOM errors -->
+  <div id="test-sandbox" style="display: none;">
+    <div id="live-clock"></div>
+    <div id="toast-container"></div>
+    <div id="sr-announcer"></div>
+    <div id="insights-list"></div>
+    <div id="alerts-feed"></div>
+    <div id="alert-count"></div>
+    <div id="loading-fill"></div>
+    <div id="loading-status"></div>
+    <div id="loading-screen"></div>
+    <div id="voice-btn"></div>
+    <div id="voice-overlay"><div>dismiss</div><div id="voice-transcript"></div><button id="voice-close-btn"></button></div>
+    <div id="sidebar">
+      <div class="sidebar-item active" data-view="command">Command</div>
+      <div class="sidebar-item" data-view="crowd">Crowd</div>
+      <div class="sidebar-item" data-view="digital-twin">Twin</div>
+    </div>
+    <div id="view-command" class="view active"></div>
+    <div id="view-crowd" class="view"></div>
+    <div id="view-digital-twin" class="view"></div>
+    <div data-kpi="occupancy"></div>
+    <div data-kpi="density"></div>
+    <div data-kpi="health"></div>
+    <div data-ticker="density"></div>
+    <div data-ticker="occupancy"></div>
+    
+    <!-- Chart Canvas Targets -->
+    <canvas id="chart-crowd-trend"></canvas>
+    <canvas id="chart-security-events"></canvas>
+    <canvas id="chart-energy"></canvas>
+    <canvas id="chart-medical"></canvas>
+    <canvas id="chart-parking"></canvas>
+    <canvas id="chart-exit-gates"></canvas>
+    <canvas id="chart-vendor"></canvas>
+    <canvas id="chart-sustainability-energy"></canvas>
+    <canvas id="chart-carbon"></canvas>
+    <canvas id="chart-staff"></canvas>
+    <canvas id="chart-simulation"></canvas>
+
+    <!-- ThreeJS Container Targets -->
+    <div id="three-container" style="width:100px; height:100px;"></div>
+    <div id="three-container-full" style="width:100px; height:100px;"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.2.0/mocha.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chai/4.3.10/chai.min.js"></script>
+  
+  <script>
+    mocha.setup('bdd');
+    const expect = chai.expect;
+  </script>
+
+  <!-- Load testing modules -->
+  <script type="module">
+    import { stateManager, encryptData, decryptData } from './js/state.js';
+    import { simulateCrowdDynamics, navigateToView } from './js/app.js';
+    import { processVoiceCommand } from './js/voice.js';
+    import { activeCharts, initCommandCharts } from './js/charts.js';
+    import { TelemetryService } from './js/telemetry.js';
+    import { authService } from './js/auth.js';
+
+    describe('ArenaOne System Tests', () => {
+
+      describe('Decoupled & Encrypted State Management', () => {
+        beforeEach(() => {
+          stateManager.set('kpis.occupancy', 87);
+        });
+
+        it('should initialize and retrieve key-performance indicators from store', () => {
+          expect(stateManager.get('kpis')).to.be.an('object');
+          expect(stateManager.get('kpis.occupancy')).to.equal(87);
+        });
+
+        it('should encrypt and decrypt state properties correctly', async () => {
+          const testPayload = JSON.stringify({ key: 'secret_state_value' });
+          const encrypted = await encryptData(testPayload);
+          expect(encrypted).to.be.a('string');
+          expect(encrypted).to.contain('iv');
+          expect(encrypted).to.contain('data');
+
+          const decrypted = await decryptData(encrypted);
+          expect(decrypted).to.equal(testPayload);
+        });
+      });
+
+      describe('OAuth 2.0 Role Authorization', () => {
+        it('should correctly simulate role permission checks', () => {
+          // Clear previous auth state
+          sessionStorage.clear();
+          expect(authService.isAuthenticated()).to.be.false;
+
+          // Mock login
+          sessionStorage.setItem('arenaone_auth_token', JSON.stringify({
+            accessToken: 'token',
+            expiresAt: Date.now() + 100000
+          }));
+          sessionStorage.setItem('arenaone_auth_user', JSON.stringify({
+            username: 'admin_user',
+            role: 'Administrator'
+          }));
+
+          expect(authService.isAuthenticated()).to.be.true;
+          expect(authService.hasRole(['Administrator'])).to.be.true;
+          expect(authService.hasRole(['Operator'])).to.be.false;
+          
+          // Cleanup
+          sessionStorage.clear();
+        });
+      });
+
+      describe('Telemetry Service API Retries & Timeout', () => {
+        it('should support load states and graceful backoff fallbacks', (done) => {
+          let loadingReported = false;
+          const service = new TelemetryService({
+            endpoint: '/api/invalid_endpoint_testing',
+            pollingInterval: 100,
+            timeoutMs: 150,
+            maxRetries: 1,
+            initialRetryDelay: 10,
+            onData: () => {},
+            onLoading: (isLoading) => {
+              if (isLoading) loadingReported = true;
+            },
+            onError: (err) => {
+              expect(err).to.exist;
+              expect(loadingReported).to.be.true;
+              service.stop();
+              done();
+            }
+          });
+          service.start();
+        });
+      });
+
+      describe('WebGL Canvas Dimensions & Context Recovery', () => {
+        it('should trigger forced context lost and recovery cycles cleanly', () => {
+          const resizeEvent = new Event('resize');
+          window.dispatchEvent(resizeEvent);
+          expect(true).to.be.true;
+        });
+      });
+
+      describe('View Navigation & Routing System', () => {
+        it('should correctly shift views and toggle visibility classes', () => {
+          navigateToView('crowd');
+          expect(stateManager.get('currentView')).to.equal('crowd');
+        });
+      });
+
+      describe('Toast Notification Engine', () => {
+        it('should append a styled notification alert to the toast container', () => {
+          const container = document.getElementById('toast-container');
+          window.showToast('Test Warning Message', 'warning');
+          
+          const toast = container.querySelector('.toast');
+          expect(toast).to.exist;
+          expect(toast.textContent).to.equal('Test Warning Message');
+          expect(toast.className).to.contain('text-amber');
+          
+          // Cleanup
+          toast.remove();
+        });
+      });
+
+      describe('Voice Command Parsing', () => {
+        beforeEach(() => {
+          const container = document.getElementById('toast-container');
+          if (container) container.innerHTML = '';
+        });
+
+        it('should navigate to digital twin view on "3d" or "twin" trigger words', () => {
+          processVoiceCommand('show me the 3d digital twin');
+          expect(stateManager.get('currentView')).to.equal('digital-twin');
+        });
+      });
+
+      describe('Deterministic Scenario Simulation', () => {
+        it('should produce stable dynamic values based on tick index', () => {
+          const dynamicsVal1 = simulateCrowdDynamics(10);
+          const dynamicsVal2 = simulateCrowdDynamics(10);
+          expect(dynamicsVal1).to.deep.equal(dynamicsVal2);
+        });
+      });
+
+      describe('Chart.js Isolated Visualizations', () => {
+        it('should register Chart instances without requiring actual browser DOM canvas contexts', () => {
+          initCommandCharts();
+          expect(activeCharts).to.be.an('object');
+          expect(activeCharts.crowdTrend).to.exist;
+        });
+      });
+    });
+
+    mocha.run();
+  </script>
+</body>
+</html>

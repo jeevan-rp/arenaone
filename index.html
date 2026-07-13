@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.tailwindcss.com https://unpkg.com; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; child-src 'self' blob:; worker-src 'self' blob:;">
+  
+  <!-- SEO Optimization Meta Tags -->
+  <title>ArenaOne – AI Command Center | FIFA World Cup 2026</title>
+  <meta name="description" content="ArenaOne is an AI-powered smart stadium operations dashboard and digital twin for the FIFA World Cup 2026. Manage crowd density, transport logistics, and emergency dispatch real-time.">
+  <meta name="keywords" content="smart stadium, sports operations, digital twin, crowd intelligence, security copilot, tournament logistics, World Cup 2026">
+  <meta name="author" content="ArenaOne Team">
+  <meta property="og:title" content="ArenaOne – AI Command Center">
+  <meta property="og:description" content="AI-enabled stadium operations dashboard and digital twin simulation for FIFA 2026.">
+  <meta property="og:type" content="website">
+
+  <!-- Typography and CSS stylesheet link -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Tailwind CSS and Icon libraries (pinned versions) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+  
+  <!-- Chart.JS and Tailwind external configuration -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="js/tailwind-config.js"></script>
+</head>
+<body>
+
+  <!-- OAuth Login Screen Overlay -->
+  <div id="login-overlay" style="display: none;" class="fixed inset-0 z-[99999] bg-[#060b18]/95 backdrop-blur-lg flex flex-col items-center justify-center p-6 text-center">
+    <div class="font-display text-4xl gradient-text tracking-widest mb-2 font-black">ARENAONE</div>
+    <div class="text-sm text-cyan/80 font-display tracking-widest uppercase mb-8">Secure Venue Staff Portal</div>
+    <div class="glass p-6 max-w-sm w-full border-cyan/20">
+      <h2 class="text-white text-xs font-semibold mb-4">Select Staff Role to Sign In (OAuth 2.0 PKCE)</h2>
+      <div class="flex flex-col gap-3">
+        <button class="oauth-login-btn w-full py-2.5 rounded-lg bg-cyan/15 hover:bg-cyan/25 border border-cyan/30 text-cyan text-xs font-semibold tracking-wider transition-all" data-role="Operator">Operator Portal</button>
+        <button class="oauth-login-btn w-full py-2.5 rounded-lg bg-green/15 hover:bg-green/25 border border-green/30 text-green text-xs font-semibold tracking-wider transition-all" data-role="Supervisor">Supervisor Portal</button>
+        <button class="oauth-login-btn w-full py-2.5 rounded-lg bg-amber/15 hover:bg-amber/25 border border-amber/30 text-amber text-xs font-semibold tracking-wider transition-all" data-role="Administrator">Administrator Console</button>
+      </div>
+      <p class="text-[10px] text-slate-500 mt-4"><i class="fa-solid fa-lock mr-1"></i>Secure authorization token refresh enabled.</p>
+    </div>
+  </div>
+
+  <!-- Accessibility Skip Navigation Link -->
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:bg-cyan focus:text-black focus:p-3 focus:rounded-lg focus:z-50 font-semibold text-xs">Skip to Content</a>
+
+  <!-- Loading Screen -->
+  <div id="loading-screen" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+    <div class="font-display text-2xl gradient-text tracking-widest" id="loading-title">ARENAONE</div>
+    <div class="text-xs text-slate-500 mt-2 tracking-wider" id="loading-sub">AI COMMAND CENTER INITIALIZING</div>
+    <div class="loading-bar"><div class="loading-fill" id="loading-fill" style="width:0%"></div></div>
+    <div class="text-[10px] text-slate-600 mt-4" id="loading-status">Connecting neural networks...</div>
+  </div>
+
+  <!-- Voice Overlay -->
+  <div class="voice-overlay" id="voice-overlay" role="dialog" aria-modal="true" aria-labelledby="voice-transcript">
+    <div class="text-xs text-slate-400 tracking-widest uppercase">Voice Command Active</div>
+    <div class="voice-ring"><i class="fa-solid fa-microphone text-3xl text-cyan" aria-hidden="true"></i></div>
+    <div class="text-lg text-white font-light" id="voice-transcript">Listening...</div>
+    <div class="text-[10px] text-cyan/70 mt-1"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Local Browser Processing (Private & Secure)</div>
+    <div class="text-xs text-slate-500 mt-2">Say a command or click anywhere to dismiss</div>
+    <button id="voice-close-btn" class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-xs text-white border border-white/10 transition-all mt-4" aria-label="Dismiss voice commands">Dismiss</button>
+  </div>
+
+  <!-- Toast Container & Screen Reader Live Announcer -->
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
+  <div id="sr-announcer" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+
+  <!-- Main App -->
+  <div id="app">
+    <!-- Header -->
+    <header id="app-header" class="flex items-center justify-between px-4 border-b border-white/5 relative" style="background:rgba(6,11,24,0.95);backdrop-filter:blur(20px)">
+      <div class="scan-line"></div>
+      <div class="flex items-center gap-3">
+        <div class="font-display text-sm gradient-text tracking-wider font-bold">ARENAONE</div>
+        <div class="hidden md:block h-4 w-px bg-white/10"></div>
+        <div class="hidden md:flex items-center gap-2 text-xs text-slate-400">
+          <i class="fa-solid fa-futbol text-cyan text-[10px]" aria-hidden="true"></i>
+          <span>BRA vs GER — QF</span>
+          <span class="text-slate-600">|</span>
+          <span>MetLife Stadium</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <!-- User Session Panel -->
+        <div id="user-session" class="flex items-center gap-2 text-[10px] text-slate-400 bg-white/5 border border-white/10 px-2.5 py-1 rounded-lg">
+          <i class="fa-solid fa-user-shield text-cyan" aria-hidden="true"></i>
+          <span id="user-role-display">Guest</span>
+          <button id="logout-btn" class="text-red hover:underline ml-1" title="Log Out">Logout</button>
+        </div>
+        <div class="hidden lg:flex items-center gap-3 text-[10px]">
+          <div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-green animate-pulse"></span><span class="text-slate-400">8 Agents Online</span></div>
+          <div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan animate-pulse"></span><span class="text-slate-400">Digital Twin Synced</span></div>
+          <div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-amber animate-pulse"></span><span class="text-slate-400">3 Active Alerts</span></div>
+        </div>
+        <div class="font-display text-xs text-slate-300 tracking-wider" id="live-clock">--:--:--</div>
+        <button id="voice-btn" class="w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center hover:border-cyan/40 hover:bg-cyan/5 transition-all" title="Voice Command" aria-label="Activate voice commands">
+          <i class="fa-solid fa-microphone text-xs text-slate-400" aria-hidden="true"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="border-r border-white/5" style="background:rgba(6,11,24,0.6)" role="tablist" aria-label="Sidebar Menu">
+      <div class="sidebar-group-label">Overview</div>
+      <div class="sidebar-item active" data-view="command" role="tab" tabindex="0" aria-selected="true"><i class="fa-solid fa-satellite-dish w-5 text-center text-xs" aria-hidden="true"></i><span>Command Center</span></div>
+      <div class="sidebar-item" data-view="digital-twin" role="tab" tabindex="0" aria-selected="false"><i class="fa-solid fa-cube w-5 text-center text-xs" aria-hidden="true"></i><span>Digital Twin</span></div>
+      
+      <div class="sidebar-group-label">Operations</div>
+      <div class="sidebar-item" data-view="crowd" role="tab" tabindex="0" aria-selected="false"><i class="fa-solid fa-users w-5 text-center text-xs" aria-hidden="true"></i><span>Crowd Intelligence</span><div class="pulse-dot"></div></div>
+      <div class="sidebar-item" data-view="security" role="tab" tabindex="0" aria-selected="false"><i class="fa-solid fa-shield-halved w-5 text-center text-xs" aria-hidden="true"></i><span>Security Copilot</span><div class="pulse-dot"></div></div>
+      <div class="sidebar-item" data-view="emergency" role="tab" tabindex="0" aria-selected="false"><i class="fa-solid fa-kit-medical w-5 text-center text-xs" aria-hidden="true"></i><span>Emergency Response</span></div>
+      <div class="sidebar-item" data-view="accessibility" role="tab" tabindex="0" aria-selected="false"><i class="fa-solid fa-universal-access w-5 text-center text-xs" aria-hidden="true"></i><span>Accessibility AI</span></div>
+      
+      <div class="sidebar-group-label">Logistics</div>
+      <div class="sidebar-item" data-view="transport" role="tab" tabindex="0" aria-selected="false"><i class="fa-solid fa-bus w-5 text-center text-xs" aria-hidden="true"></i><span>Transport Intel</span></div>
+      <div class="sidebar-item" data-view="vendor" role="tab" tabindex="0" aria-selected="false"><i class="fa-solid fa-store w-5 text-center text-xs" aria-hidden="true"></i><span>Vendor Intel</span></div>
+      <div class="sidebar-item" data-view="sustainability" role="tab" tabindex="0" aria-selected="false"><i class="fa-solid fa-leaf w-5 text-center text-xs" aria-hidden="true"></i><span>Sustainability</span></div>
+      
+      <div class="sidebar-group-label">Management</div>
+      <div class="sidebar-item" data-view="tournament" role="tab" tabindex="0" aria-selected="false"><i class="fa-solid fa-people-group w-5 text-center text-xs" aria-hidden="true"></i><span>Tournament Ops</span></div>
+      <div class="sidebar-item" data-view="simulation" role="tab" tabindex="0" aria-selected="false"><i class="fa-solid fa-flask w-5 text-center text-xs" aria-hidden="true"></i><span>Simulation Engine</span></div>
+      
+      <div class="sidebar-group-label">Engagement</div>
+      <div class="sidebar-item" data-view="fan" role="tab" tabindex="0" aria-selected="false"><i class="fa-solid fa-comments w-5 text-center text-xs" aria-hidden="true"></i><span>Fan Companion</span></div>
+    </aside>
+
+    <!-- Main Content -->
+    <main id="main-content">
+
+      <!-- COMMAND CENTER VIEW -->
+      <div class="view active" id="view-command">
+        <div class="grid grid-cols-4 gap-3 mb-4">
+          <div class="glass kpi-card p-4">
+            <div class="flex items-center justify-between mb-2"><span class="text-[10px] uppercase tracking-wider text-slate-500">Stadium Occupancy</span><i class="fa-solid fa-chart-pie text-xs text-cyan" aria-hidden="true"></i></div>
+            <div class="font-display text-2xl font-bold text-white" data-kpi="occupancy">0%</div>
+            <div class="flex items-center gap-1 mt-1 text-[11px] text-green"><i class="fa-solid fa-arrow-up text-[8px]" aria-hidden="true"></i> 2.3% from last hour</div>
+          </div>
+          <div class="glass kpi-card green p-4">
+            <div class="flex items-center justify-between mb-2"><span class="text-[10px] uppercase tracking-wider text-slate-500">Crowd Density</span><i class="fa-solid fa-users text-xs text-green" aria-hidden="true"></i></div>
+            <div class="font-display text-2xl font-bold text-white" data-kpi="density">0</div>
+            <div class="flex items-center gap-1 mt-1 text-[11px] text-amber"><i class="fa-solid fa-minus text-[8px]" aria-hidden="true"></i> Moderate — 3 zones elevated</div>
+          </div>
+          <div class="glass kpi-card amber p-4">
+            <div class="flex items-center justify-between mb-2"><span class="text-[10px] uppercase tracking-wider text-slate-500">Active Incidents</span><i class="fa-solid fa-triangle-exclamation text-xs text-amber" aria-hidden="true"></i></div>
+            <div class="font-display text-2xl font-bold text-white" data-kpi="incidents">0</div>
+            <div class="flex items-center gap-1 mt-1 text-[11px] text-amber"><i class="fa-solid fa-circle text-[6px]" aria-hidden="true"></i> 1 critical, 2 monitoring</div>
+          </div>
+          <div class="glass kpi-card p-4">
+            <div class="flex items-center justify-between mb-2"><span class="text-[10px] uppercase tracking-wider text-slate-500">Stadium Health</span><i class="fa-solid fa-heart-pulse text-xs text-cyan" aria-hidden="true"></i></div>
+            <div class="font-display text-2xl font-bold text-green" data-kpi="health">0</div>
+            <div class="flex items-center gap-1 mt-1 text-[11px] text-green"><i class="fa-solid fa-arrow-up text-[8px]" aria-hidden="true"></i> All systems nominal</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-5 gap-3 mb-4">
+          <div class="col-span-3 glass glow-border p-0" style="min-height:380px;position:relative" id="three-container">
+            <div class="absolute top-3 left-3 z-10 flex items-center gap-2">
+              <span class="text-[10px] font-display tracking-wider text-cyan bg-black/40 px-2 py-1 rounded">DIGITAL TWIN</span>
+              <span class="text-[9px] text-slate-500 bg-black/40 px-2 py-1 rounded">LIVE</span>
+            </div>
+            <div class="absolute bottom-3 left-3 z-10 text-[9px] text-slate-500 bg-black/40 px-2 py-1 rounded">Drag to rotate · Scroll to zoom</div>
+          </div>
+          <div class="col-span-2 flex flex-col gap-3">
+            <div class="glass p-4 flex-1">
+              <div class="flex items-center gap-2 mb-3"><i class="fa-solid fa-brain text-xs text-cyan" aria-hidden="true"></i><span class="text-xs font-semibold text-white">AI Summary</span><span class="badge badge-ok ml-auto">Live</span></div>
+              <div class="text-xs text-slate-300 leading-relaxed space-y-2" id="ai-summary-text">
+                <p>Crowd flow remains stable at <span class="text-cyan font-medium">87% occupancy</span>. Gate A congestion predicted in 12 minutes — recommend pre-opening Gate C overflow.</p>
+                <p>Security detected <span class="text-amber font-medium">1 unattended bag</span> at Section 204 (92% confidence). Team dispatched.</p>
+                <p>Energy consumption tracking <span class="text-green font-medium">8% below</span> FIFA baseline. HVAC optimization saving 340kW.</p>
+              </div>
+            </div>
+            <div class="glass p-4" style="height:160px">
+              <div class="text-xs font-semibold text-white mb-2">Crowd Trend (Last 60min)</div>
+              <div class="relative w-full h-[100px]"><canvas id="chart-crowd-trend"></canvas></div>
+            </div>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="glass p-4" style="height:180px">
+            <div class="text-xs font-semibold text-white mb-2">Security Events</div>
+            <div class="relative w-full h-[120px]"><canvas id="chart-security-events"></canvas></div>
+          </div>
+          <div class="glass p-4" style="height:180px">
+            <div class="text-xs font-semibold text-white mb-2">Energy Usage (MW)</div>
+            <div class="relative w-full h-[120px]"><canvas id="chart-energy"></canvas></div>
+          </div>
+          <div class="glass p-4" style="height:180px">
+            <div class="text-xs font-semibold text-white mb-2">Medical Response Times (min)</div>
+            <div class="relative w-full h-[120px]"><canvas id="chart-medical"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CROWD INTELLIGENCE VIEW -->
+      <div class="view" id="view-crowd">
+        <div class="flex items-center justify-between mb-4">
+          <div><h2 class="font-display text-lg text-white tracking-wide">Crowd Intelligence</h2><p class="text-xs text-slate-500 mt-1">Real-time density analysis and congestion prediction</p></div>
+          <div class="flex gap-2"><span class="badge badge-warning"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> 3 Elevated Zones</span></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <div class="col-span-2 glass p-0 relative" style="min-height:400px">
+            <canvas id="heatmap-canvas" class="heatmap-canvas w-full h-full" style="min-height:400px"></canvas>
+            <div class="absolute top-3 left-3 text-[10px] font-display tracking-wider text-cyan bg-black/50 px-2 py-1 rounded">CROWD HEATMAP — LIVE</div>
+            <div class="absolute bottom-3 right-3 flex items-center gap-3 text-[9px]">
+              <span class="flex items-center gap-1"><span class="w-3 h-2 rounded-sm" style="background:rgba(0,255,136,0.5)"></span>Low</span>
+              <span class="flex items-center gap-1"><span class="w-3 h-2 rounded-sm" style="background:rgba(255,184,0,0.5)"></span>Medium</span>
+              <span class="flex items-center gap-1"><span class="w-3 h-2 rounded-sm" style="background:rgba(255,56,96,0.5)"></span>High</span>
+            </div>
+          </div>
+          <div class="flex flex-col gap-3">
+            <div class="glass p-4">
+              <div class="text-xs font-semibold text-white mb-3">Zone Density</div>
+              <div class="space-y-3" id="zone-density-list"></div>
+            </div>
+            <div class="glass p-4 flex-1">
+              <div class="flex items-center gap-2 mb-3"><i class="fa-solid fa-brain text-xs text-green" aria-hidden="true"></i><span class="text-xs font-semibold text-white">AI Predictions</span></div>
+              <div class="space-y-2 text-xs text-slate-300 leading-relaxed" id="crowd-predictions"></div>
+            </div>
+          </div>
+        </div>
+        <div class="grid grid-cols-4 gap-3">
+          <div class="glass p-3 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Avg Queue Time</div><div class="font-display text-xl text-white mt-1">4.2<span class="text-xs text-slate-400 ml-1">min</span></div></div>
+          <div class="glass p-3 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Peak Density</div><div class="font-display text-xl text-amber mt-1">0.89<span class="text-xs text-slate-400 ml-1">p/m²</span></div></div>
+          <div class="glass p-3 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Flow Rate</div><div class="font-display text-xl text-green mt-1">1,240<span class="text-xs text-slate-400 ml-1">p/min</span></div></div>
+          <div class="glass p-3 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Stampede Risk</div><div class="font-display text-xl text-green mt-1">LOW</div></div>
+        </div>
+      </div>
+
+      <!-- SECURITY VIEW -->
+      <div class="view" id="view-security">
+        <div class="flex items-center justify-between mb-4">
+          <div><h2 class="font-display text-lg text-white tracking-wide">Security Copilot</h2><p class="text-xs text-slate-500 mt-1">AI-powered threat detection and response coordination</p></div>
+          <div class="flex gap-2"><span class="badge badge-critical"><i class="fa-solid fa-circle text-[6px]" aria-hidden="true"></i> 1 Critical</span><span class="badge badge-warning"><i class="fa-solid fa-circle text-[6px]" aria-hidden="true"></i> 2 Monitoring</span></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <div class="col-span-2 glass p-0 overflow-y-auto" style="max-height:520px">
+            <div class="p-3 border-b border-white/5 flex items-center gap-2"><i class="fa-solid fa-list text-xs text-cyan" aria-hidden="true"></i><span class="text-xs font-semibold text-white">Active Incidents</span></div>
+            <div class="p-3 space-y-3" id="incident-feed"></div>
+          </div>
+          <div class="flex flex-col gap-3">
+            <div class="glass p-4">
+              <div class="text-xs font-semibold text-white mb-3">Threat Level</div>
+              <div class="flex items-center justify-center my-4"><div class="relative w-32 h-32">
+                <svg viewBox="0 0 120 120" class="w-full h-full -rotate-90">
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8"/>
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="var(--amber)" stroke-width="8" stroke-dasharray="327" stroke-dashoffset="285" stroke-linecap="round"/>
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center"><span class="font-display text-2xl text-amber">LOW</span><span class="text-[10px] text-slate-500">12/100</span></div>
+              </div></div>
+            </div>
+            <div class="glass p-4 flex-1">
+              <div class="flex items-center gap-2 mb-3"><i class="fa-solid fa-brain text-xs text-cyan" aria-hidden="true"></i><span class="text-xs font-semibold text-white">AI Recommendations</span></div>
+              <div class="space-y-2 text-xs text-slate-300 leading-relaxed" id="security-recommendations"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EMERGENCY VIEW -->
+      <div class="view" id="view-emergency">
+        <div class="flex items-center justify-between mb-4">
+          <div><h2 class="font-display text-lg text-white tracking-wide">Emergency Response</h2><p class="text-xs text-slate-500 mt-1">Medical incident management and automated dispatch</p></div>
+        </div>
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <div class="col-span-2 glass p-4">
+            <div class="text-xs font-semibold text-white mb-3">Active Medical Incidents</div>
+            <div class="space-y-3" id="medical-feed"></div>
+          </div>
+          <div class="flex flex-col gap-3">
+            <div class="glass p-4 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Avg Response Time</div><div class="font-display text-3xl text-green mt-2">2.4<span class="text-sm text-slate-400 ml-1">min</span></div><div class="text-[10px] text-green mt-1">Below 3min target</div></div>
+            <div class="glass p-4 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Medical Teams Available</div><div class="font-display text-3xl text-white mt-2">7<span class="text-sm text-slate-400 ml-1">/12</span></div></div>
+            <div class="glass p-4 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Volunteers on Standby</div><div class="font-display text-3xl text-cyan mt-2">34</div></div>
+          </div>
+        </div>
+        <div class="glass p-4">
+          <div class="text-xs font-semibold text-white mb-3">Stadium Medical Map</div>
+          <canvas id="medical-map-canvas" style="width:100%;height:200px;border-radius:8px"></canvas>
+        </div>
+      </div>
+
+      <!-- TRANSPORT VIEW -->
+      <div class="view" id="view-transport">
+        <div class="mb-4"><h2 class="font-display text-lg text-white tracking-wide">Transport Intelligence</h2><p class="text-xs text-slate-500 mt-1">Parking, metro, bus, and ride-share coordination</p></div>
+        <div class="grid grid-cols-4 gap-3 mb-4">
+          <div class="glass p-4 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Parking Occupancy</div><div class="font-display text-2xl text-amber mt-2">76%</div><div class="text-[10px] text-slate-400 mt-1">6,080 / 8,000 spots</div></div>
+          <div class="glass p-4 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Metro Wait</div><div class="font-display text-2xl text-green mt-2">8<span class="text-sm text-slate-400 ml-1">min</span></div><div class="text-[10px] text-green mt-1">Normal operations</div></div>
+          <div class="glass p-4 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Bus Departures</div><div class="font-display text-2xl text-white mt-2">14</div><div class="text-[10px] text-slate-400 mt-1">Next in 6 min</div></div>
+          <div class="glass p-4 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Ride-share Queue</div><div class="font-display text-2xl text-cyan mt-2">22</div><div class="text-[10px] text-slate-400 mt-1">~12 min wait</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="glass p-4" style="height:240px"><div class="text-xs font-semibold text-white mb-2">Parking Fill Rate</div><div class="relative w-full h-[180px]"><canvas id="chart-parking"></canvas></div></div>
+          <div class="glass p-4" style="height:240px"><div class="text-xs font-semibold text-white mb-2">Exit Gate Congestion</div><div class="relative w-full h-[180px]"><canvas id="chart-exit-gates"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- VENDOR VIEW -->
+      <div class="view" id="view-vendor">
+        <div class="mb-4"><h2 class="font-display text-lg text-white tracking-wide">Vendor Intelligence</h2><p class="text-xs text-slate-500 mt-1">Inventory, queues, staff allocation, and sales optimization</p></div>
+        <div class="grid grid-cols-4 gap-3 mb-4">
+          <div class="glass p-4 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Avg Queue Time</div><div class="font-display text-2xl text-amber mt-2">6.8<span class="text-sm text-slate-400 ml-1">min</span></div></div>
+          <div class="glass p-4 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Inventory Health</div><div class="font-display text-2xl text-green mt-2">68%</div></div>
+          <div class="glass p-4 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Staff Utilization</div><div class="font-display text-2xl text-white mt-2">82%</div></div>
+          <div class="glass p-4 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Sales Velocity</div><div class="font-display text-2xl text-cyan mt-2">$4.2k<span class="text-sm text-slate-400 ml-1">/min</span></div></div>
+        </div>
+        <div class="glass p-4" style="height:260px"><div class="text-xs font-semibold text-white mb-2">Stall Inventory Levels</div><div class="relative w-full h-[200px]"><canvas id="chart-vendor"></canvas></div></div>
+      </div>
+
+      <!-- SUSTAINABILITY VIEW -->
+      <div class="view" id="view-sustainability">
+        <div class="mb-4"><h2 class="font-display text-lg text-white tracking-wide">Sustainability AI</h2><p class="text-xs text-slate-500 mt-1">Energy, water, waste, and carbon footprint monitoring</p></div>
+        <div class="grid grid-cols-4 gap-3 mb-4">
+          <div class="glass p-4 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Energy Usage</div><div class="font-display text-2xl text-green mt-2">4.2<span class="text-sm text-slate-400 ml-1">MW</span></div><div class="text-[10px] text-green mt-1">8% below baseline</div></div>
+          <div class="glass p-4 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Water Usage</div><div class="font-display text-2xl text-cyan mt-2">12.8<span class="text-sm text-slate-400 ml-1">kL</span></div></div>
+          <div class="glass p-4 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Waste Recycled</div><div class="font-display text-2xl text-green mt-2">73%</div></div>
+          <div class="glass p-4 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Carbon Saved</div><div class="font-display text-2xl text-green mt-2">12.3<span class="text-sm text-slate-400 ml-1">tonnes</span></div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="glass p-4" style="height:260px"><div class="text-xs font-semibold text-white mb-2">Energy Consumption Breakdown</div><div class="relative w-full h-[200px]"><canvas id="chart-sustainability-energy"></canvas></div></div>
+          <div class="glass p-4" style="height:260px"><div class="text-xs font-semibold text-white mb-2">Carbon Reduction Progress</div><div class="relative w-full h-[200px]"><canvas id="chart-carbon"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- SIMULATION VIEW -->
+      <div class="view" id="view-simulation">
+        <div class="mb-4"><h2 class="font-display text-lg text-white tracking-wide">AI Simulation Engine</h2><p class="text-xs text-slate-500 mt-1">Run what-if scenarios and predict operational impact</p></div>
+        <div class="grid grid-cols-4 gap-3 mb-4" id="scenario-cards"></div>
+        <div class="grid grid-cols-3 gap-3" id="simulation-results" style="display:none">
+          <div class="col-span-2 glass p-4"><div class="text-xs font-semibold text-white mb-2" id="sim-result-title">Impact Analysis</div><div class="relative w-full h-[240px]"><canvas id="chart-simulation"></canvas></div></div>
+          <div class="glass p-4"><div class="text-xs font-semibold text-white mb-3">AI Mitigation Plan</div><div class="space-y-2 text-xs text-slate-300 leading-relaxed" id="sim-mitigation"></div>
+            <div class="mt-4 p-3 rounded-lg" style="background:rgba(255,184,0,0.08);border:1px solid rgba(255,184,0,0.2)">
+              <div class="text-[10px] text-amber uppercase tracking-wider font-semibold mb-1">Estimated Impact</div>
+              <div class="font-display text-lg text-amber" id="sim-impact-score">MEDIUM</div>
+              <div class="text-[11px] text-slate-400 mt-1" id="sim-impact-detail"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOURNAMENT OPS VIEW -->
+      <div class="view" id="view-tournament">
+        <div class="mb-4"><h2 class="font-display text-lg text-white tracking-wide">Tournament Operations</h2><p class="text-xs text-slate-500 mt-1">Staff, volunteers, and resource management</p></div>
+        <div class="grid grid-cols-4 gap-3 mb-4">
+          <div class="glass p-4 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Volunteers Active</div><div class="font-display text-2xl text-cyan mt-2">156</div></div>
+          <div class="glass p-4 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Security Staff</div><div class="font-display text-2xl text-white mt-2">89</div></div>
+          <div class="glass p-4 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Cleaning Crews</div><div class="font-display text-2xl text-green mt-2">24</div></div>
+          <div class="glass p-4 text-center"><div class="text-[10px] text-slate-500 uppercase tracking-wider">Maintenance</div><div class="font-display text-2xl text-white mt-2">12</div></div>
+        </div>
+        <div class="glass p-4" style="height:300px"><div class="text-xs font-semibold text-white mb-2">Staff Allocation by Zone</div><div class="relative w-full h-[240px]"><canvas id="chart-staff"></canvas></div></div>
+      </div>
+
+      <!-- ACCESSIBILITY VIEW -->
+      <div class="view" id="view-accessibility">
+        <div class="mb-4"><h2 class="font-display text-lg text-white tracking-wide">Accessibility AI</h2><p class="text-xs text-slate-500 mt-1">Inclusive navigation and assistance for all fans</p></div>
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <div class="glass p-4"><div class="flex items-center gap-2 mb-3"><i class="fa-solid fa-wheelchair text-xs text-cyan" aria-hidden="true"></i><span class="text-xs font-semibold text-white">Wheelchair Routes</span></div><div class="text-xs text-slate-300 leading-relaxed">All 12 accessible entrances operational. Elevator B under maintenance — rerouting to Elevator C. Average wheelchair transit time: 8 minutes from parking to Section 108.</div></div>
+          <div class="glass p-4"><div class="flex items-center gap-2 mb-3"><i class="fa-solid fa-eye text-xs text-cyan" aria-hidden="true"></i><span class="text-xs font-semibold text-white">Visual Assistance</span></div><div class="text-xs text-slate-300 leading-relaxed">Live captioning active on 4 screens. Audio description available in 6 languages. 14 beacon navigation devices checked out. 3 remaining in inventory.</div></div>
+          <div class="glass p-4"><div class="flex items-center gap-2 mb-3"><i class="fa-solid fa-ear-listen text-xs text-cyan" aria-hidden="true"></i><span class="text-xs font-semibold text-white">Hearing Assistance</span></div><div class="text-xs text-slate-300 leading-relaxed">Hearing loop active in Sections 101-120. 48 hearing aid receivers available. Sign language interpreters stationed at Gates A, C, E. Vibration alerts enabled for emergencies.</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="glass p-4"><div class="flex items-center gap-2 mb-3"><i class="fa-solid fa-language text-xs text-cyan" aria-hidden="true"></i><span class="text-xs font-semibold text-white">Multilingual Support</span></div><div class="grid grid-cols-4 gap-2 text-center text-xs">
+            <div class="p-2 rounded-lg" style="background:rgba(0,240,255,0.06)"><div class="font-semibold text-white">EN</div><div class="text-slate-500 text-[10px]">Active</div></div>
+            <div class="p-2 rounded-lg" style="background:rgba(0,240,255,0.06)"><div class="font-semibold text-white">ES</div><div class="text-slate-500 text-[10px]">Active</div></div>
+            <div class="p-2 rounded-lg" style="background:rgba(0,240,255,0.06)"><div class="font-semibold text-white">PT</div><div class="text-slate-500 text-[10px]">Active</div></div>
+            <div class="p-2 rounded-lg" style="background:rgba(0,240,255,0.06)"><div class="font-semibold text-white">FR</div><div class="text-slate-500 text-[10px]">Active</div></div>
+            <div class="p-2 rounded-lg" style="background:rgba(0,240,255,0.06)"><div class="font-semibold text-white">DE</div><div class="text-slate-500 text-[10px]">Active</div></div>
+            <div class="p-2 rounded-lg" style="background:rgba(0,240,255,0.06)"><div class="font-semibold text-white">AR</div><div class="text-slate-500 text-[10px]">Active</div></div>
+            <div class="p-2 rounded-lg" style="background:rgba(0,240,255,0.06)"><div class="font-semibold text-white">ZH</div><div class="text-slate-500 text-[10px]">Active</div></div>
+            <div class="p-2 rounded-lg" style="background:rgba(0,240,255,0.06)"><div class="font-semibold text-white">JA</div><div class="text-slate-500 text-[10px]">Active</div></div>
+          </div></div>
+          <div class="glass p-4"><div class="flex items-center gap-2 mb-3"><i class="fa-solid fa-brain text-xs text-green" aria-hidden="true"></i><span class="text-xs font-semibold text-white">AI Recommendations</span></div>
+          <div class="space-y-2 text-xs text-slate-300 leading-relaxed">
+            <p><span class="text-cyan">Sensory Zone:</span> Quiet room occupancy at 60%. Consider opening overflow room in Level 2 corridor.</p>
+            <p><span class="text-cyan">Elevator B:</span> Maintenance extending 15 min. 3 wheelchair users rerouted automatically.</p>
+            <p><span class="text-cyan">Seating:</span> 4 accessible seats remain in Section 112. 2 in Section 205.</p>
+          </div></div>
+        </div>
+      </div>
+
+      <!-- DIGITAL TWIN VIEW -->
+      <div class="view" id="view-digital-twin">
+        <div class="mb-4"><h2 class="font-display text-lg text-white tracking-wide">Digital Twin</h2><p class="text-xs text-slate-500 mt-1">Interactive 3D stadium model with real-time overlays</p></div>
+        <div class="glass glow-border p-0 relative" style="height:calc(100vh - 200px)">
+          <div id="three-container-full" style="width:100%;height:100%;border-radius:12px"></div>
+          <div class="absolute top-3 left-3 z-10 flex gap-2">
+            <button class="text-[10px] font-display tracking-wider text-white bg-black/50 hover:bg-cyan/20 px-3 py-1.5 rounded border border-white/10 transition-all" onclick="toggle3DLayer('crowd')">Crowd</button>
+            <button class="text-[10px] font-display tracking-wider text-white bg-black/50 hover:bg-cyan/20 px-3 py-1.5 rounded border border-white/10 transition-all" onclick="toggle3DLayer('security')">Security</button>
+            <button class="text-[10px] font-display tracking-wider text-white bg-black/50 hover:bg-cyan/20 px-3 py-1.5 rounded border border-white/10 transition-all" onclick="toggle3DLayer('medical')">Medical</button>
+            <button class="text-[10px] font-display tracking-wider text-white bg-black/50 hover:bg-cyan/20 px-3 py-1.5 rounded border border-white/10 transition-all" onclick="toggle3DLayer('transport')">Transport</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAN COMPANION VIEW -->
+      <div class="view" id="view-fan">
+        <div class="mb-4"><h2 class="font-display text-lg text-white tracking-wide">Fan AI Companion</h2><p class="text-xs text-slate-500 mt-1">Multilingual conversational assistant for fans</p></div>
+        <div class="glass p-0 flex flex-col" style="height:calc(100vh - 200px)">
+          <div class="p-3 border-b border-white/5 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background:linear-gradient(135deg,var(--cyan),var(--green))"><i class="fa-solid fa-robot text-xs text-black" aria-hidden="true"></i></div>
+            <div><div class="text-xs font-semibold text-white">ArenaOne Assistant</div><div class="text-[10px] text-green">Online — 8 languages</div></div>
+            <div class="ml-auto flex gap-1" id="language-switcher">
+              <button class="lang-btn text-[9px] px-2 py-0.5 rounded bg-cyan/10 text-cyan border border-cyan/20" data-lang="en-US">EN</button>
+              <button class="lang-btn text-[9px] px-2 py-0.5 rounded bg-white/5 text-slate-400" data-lang="es-ES">ES</button>
+              <button class="lang-btn text-[9px] px-2 py-0.5 rounded bg-white/5 text-slate-400" data-lang="pt-PT">PT</button>
+              <button class="lang-btn text-[9px] px-2 py-0.5 rounded bg-white/5 text-slate-400" data-lang="fr-FR">FR</button>
+            </div>
+          </div>
+          <div class="flex-1 overflow-y-auto p-4 space-y-3" id="chat-messages"></div>
+          <div class="p-3 border-t border-white/5 flex gap-2">
+            <input type="text" id="chat-input" class="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-slate-600 outline-none focus:border-cyan/30 transition-colors" placeholder="Ask me anything... directions, food, transport, accessibility..." aria-label="Chat message input">
+            <button id="chat-send" class="px-4 py-2 rounded-lg text-xs font-semibold text-black transition-all hover:opacity-90" style="background:linear-gradient(135deg,var(--cyan),var(--green))">Send</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Insights Panel -->
+    <aside id="insights-panel" class="border-l border-white/5" style="background:rgba(6,11,24,0.6)">
+      <div class="glass p-4 mb-3">
+        <div class="flex items-center gap-2 mb-3"><i class="fa-solid fa-brain text-xs text-cyan" aria-hidden="true"></i><span class="text-xs font-semibold text-white">AI Insights</span></div>
+        <div class="space-y-2" id="insights-list"></div>
+      </div>
+      <div class="glass p-4 mb-3">
+        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold text-white">Live Alerts</span><span class="badge badge-warning" id="alert-count">3</span></div>
+        <div class="space-y-2 max-h-64 overflow-y-auto" id="alerts-feed"></div>
+      </div>
+      <div class="glass p-4">
+        <div class="text-xs font-semibold text-white mb-3">Quick Actions</div>
+        <div class="space-y-2">
+          <button class="w-full text-left text-xs px-3 py-2 rounded-lg border border-white/5 hover:border-cyan/20 hover:bg-cyan/5 text-slate-300 transition-all" onclick="showToast('All gates status refreshed','info')"><i class="fa-solid fa-door-open w-4 text-cyan" aria-hidden="true"></i> Refresh Gate Status</button>
+          <button class="w-full text-left text-xs px-3 py-2 rounded-lg border border-white/5 hover:border-cyan/20 hover:bg-cyan/5 text-slate-300 transition-all" onclick="showToast('Volunteers deployed to Gate A','success')"><i class="fa-solid fa-people-carry-box w-4 text-green" aria-hidden="true"></i> Deploy Volunteers</button>
+          <button class="w-full text-left text-xs px-3 py-2 rounded-lg border border-white/5 hover:border-cyan/20 hover:bg-cyan/5 text-slate-300 transition-all" onclick="showToast('Emergency broadcast sent','warning')"><i class="fa-solid fa-bullhorn w-4 text-amber" aria-hidden="true"></i> Emergency Broadcast</button>
+          <button class="w-full text-left text-xs px-3 py-2 rounded-lg border border-white/5 hover:border-cyan/20 hover:bg-cyan/5 text-slate-300 transition-all" onclick="showToast('Report generated and downloaded','success')"><i class="fa-solid fa-file-export w-4 text-cyan" aria-hidden="true"></i> Generate Report</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- KPI Ticker -->
+    <footer id="kpi-ticker" class="flex items-center border-t border-white/5 overflow-x-auto" style="background:rgba(6,11,24,0.9)">
+      <div class="ticker-item"><span class="text-slate-500">Crowd</span><span class="font-display text-white font-semibold" data-ticker="density">73%</span><i class="fa-solid fa-arrow-up text-[8px] text-green" aria-hidden="true"></i></div>
+      <div class="ticker-item"><span class="text-slate-500">Occupancy</span><span class="font-display text-white font-semibold" data-ticker="occupancy">87%</span></div>
+      <div class="ticker-item"><span class="text-slate-500">Incidents</span><span class="font-display text-amber font-semibold" data-ticker="incidents">3</span></div>
+      <div class="ticker-item"><span class="text-slate-500">Security</span><span class="font-display text-green font-semibold">LOW</span></div>
+      <div class="ticker-item"><span class="text-slate-500">Med Response</span><span class="font-display text-white font-semibold">2.4m</span></div>
+      <div class="ticker-item"><span class="text-slate-500">Volunteers</span><span class="font-display text-white font-semibold">84%</span></div>
+      <div class="ticker-item"><span class="text-slate-500">Parking</span><span class="font-display text-amber font-semibold">76%</span></div>
+      <div class="ticker-item"><span class="text-slate-500">Inventory</span><span class="font-display text-white font-semibold">68%</span></div>
+      <div class="ticker-item"><span class="text-slate-500">Energy</span><span class="font-display text-green font-semibold">4.2MW</span></div>
+      <div class="ticker-item"><span class="text-slate-500">Water</span><span class="font-display text-white font-semibold">12.8kL</span></div>
+      <div class="ticker-item"><span class="text-slate-500">Carbon</span><span class="font-display text-green font-semibold">-12.3t</span></div>
+      <div class="ticker-item"><span class="text-slate-500">Health</span><span class="font-display text-green font-semibold">94/100</span></div>
+    </footer>
+  </div>
+
+  <!-- Modular Scripts -->
+  <script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/charts.js"></script>
+  <script type="module" src="js/twin.js"></script>
+  <script type="module" src="js/voice.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
