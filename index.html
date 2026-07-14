@@ -25,6 +25,15 @@
   <!-- Chart.JS and Tailwind external configuration -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="js/tailwind-config.js"></script>
+  
+  <!-- Import map for ES modules (resolves 'three' bare import for OrbitControls) -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+      }
+    }
+  </script>
 </head>
 <body>
 

@@ -26,6 +26,7 @@ export class TelemetryService {
 
     this.timerId = null;
     this.isPolling = false;
+    this.fallbackMode = false;
   }
 
   /**
@@ -54,6 +55,15 @@ export class TelemetryService {
    */
   async _poll() {
     if (!this.isPolling) return;
+    
+    if (this.fallbackMode) {
+      this.onError(new Error('Telemetry service offline fallback'));
+      if (this.isPolling) {
+        this.timerId = setTimeout(() => this._poll(), this.pollingInterval);
+      }
+      return;
+    }
+
     this.onLoading(true);
     
     try {
@@ -61,7 +71,13 @@ export class TelemetryService {
       this.onData(data);
       this.onLoading(false);
     } catch (err) {
-      console.error('[TelemetryService] Polling cycle error:', err);
+      const is404 = err.message && err.message.includes('Status: 404');
+      if (is404) {
+        this.fallbackMode = true;
+        console.warn('[TelemetryService] Permanent 404 detected. Switching to offline simulation fallback.');
+      } else {
+        console.error('[TelemetryService] Polling cycle error:', err);
+      }
       this.onError(err);
       this.onLoading(false);
     }
@@ -90,7 +106,8 @@ export class TelemetryService {
     } catch (err) {
       clearTimeout(id);
       
-      if (attempt < this.maxRetries && this.isPolling) {
+      const is404 = err.message && err.message.includes('Status: 404');
+      if (attempt < this.maxRetries && this.isPolling && !is404) {
         const delay = this.initialRetryDelay * Math.pow(2, attempt);
         console.warn(`[TelemetryService] Fetch failed. Retrying in ${delay}ms... (Attempt ${attempt + 1}/${this.maxRetries})`);
         await new Promise(resolve => setTimeout(resolve, delay));
