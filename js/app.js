@@ -361,4 +361,15 @@ document.addEventListener('DOMContentLoaded', () => {
       navigateToView(currentView);
     }
   });
+
+  // Setup non-inline event listener for quick action buttons
+  const quickActions = document.getElementById('quick-actions-container');
+  if (quickActions) {
+    quickActions.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (btn && btn.dataset.toastMsg) {
+        showToast(btn.dataset.toastMsg, btn.dataset.toastType || 'info');
+      }
+    });
+  }
 });

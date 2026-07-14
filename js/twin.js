@@ -1,5 +1,5 @@
-import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+import * as THREE from 'https://unpkg.com/three@0.160.0?module';
+import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js?module';
 import { stateManager } from './state.js';
 import { showToast } from './app.js';
 
@@ -384,4 +384,18 @@ window.addEventListener('viewChanged', (e) => {
   const viewId = e.detail.viewId;
   if (viewId === 'digital-twin') initFull3D();
 });
+
+// Setup non-inline event listener for layer buttons
+document.addEventListener('DOMContentLoaded', () => {
+  const layerControls = document.getElementById('twin-layer-controls');
+  if (layerControls) {
+    layerControls.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (btn && btn.dataset.layer) {
+        window.toggle3DLayer(btn.dataset.layer);
+      }
+    });
+  }
+});
+
 export { renderer, camera };
