@@ -1,5 +1,14 @@
 import { stateManager } from './state.js';
 import { showToast, runWithBoundary } from './app.js';
+import {
+  INCIDENT_TICK_INTERVAL_MS,
+  INCIDENT_TIMER_DECREMENT_S,
+  CHAT_RESPONSE_BASE_DELAY_MS,
+  CHAT_RESPONSE_JITTER_MS,
+  VOLUNTEER_MIN_COUNT,
+  VOLUNTEER_DENSITY_THRESHOLD,
+  VOLUNTEER_DENSITY_SCALE,
+} from './constants.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // Security Incident Feed rendering function (supports multiple concurrent incidents)
@@ -271,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (inc.status !== 'resolved' && inc.timer !== undefined) {
           updated = true;
           if (inc.timer > 0) {
-            return { ...inc, timer: inc.timer - 5 };
+            return { ...inc, timer: inc.timer - INCIDENT_TIMER_DECREMENT_S };
           } else {
             showToast(`Incident Resolved: ${inc.type}`, 'success');
             return { ...inc, status: 'resolved', timer: 0 };
@@ -285,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderIncidents();
       }
     });
-  }, 5000);
+  }, INCIDENT_TICK_INTERVAL_MS);
 
   // Fan Chat logic
   const messagesContainer = document.getElementById('chat-messages');
@@ -359,7 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const response = await generateAIResponse(text);
         addChatMessage('ai', response, true);
       });
-    }, 600 + Math.random() * 400);
+    }, CHAT_RESPONSE_BASE_DELAY_MS + Math.random() * CHAT_RESPONSE_JITTER_MS);
   }
 });
 
@@ -422,7 +431,10 @@ Provide a brief, context-aware, helpful response (max 3 sentences) for the fans 
   }
 
   // 3. Fallback: Context-Aware Dynamic Responses with variations
-  const calculatedVolunteers = Math.max(10, Math.round((density - 50) * 1.8));
+  const calculatedVolunteers = Math.max(
+    VOLUNTEER_MIN_COUNT,
+    Math.round((density - VOLUNTEER_DENSITY_THRESHOLD) * VOLUNTEER_DENSITY_SCALE)
+  );
 
   const prompts = {
     directions: [

@@ -31,6 +31,13 @@ function runChartBoundary(chartName, fn) {
   }
 }
 
+/**
+ * Initialises Chart.js instances for the Command Center view:
+ * crowd trend line, security events bar, energy consumption line,
+ * and medical response time bar.
+ * Safe to call multiple times — skips already-initialised charts.
+ * @returns {void}
+ */
 export function initCommandCharts() {
   runChartBoundary('crowdTrend', () => {
     const trendCtx = document.getElementById('chart-crowd-trend');
@@ -89,6 +96,11 @@ export function initCommandCharts() {
   });
 }
 
+/**
+ * Initialises Chart.js instances for the Transport & Logistics view:
+ * multi-lot parking fill-rate trend and per-gate exit congestion bar.
+ * @returns {void}
+ */
 export function initTransportCharts() {
   runChartBoundary('parking', () => {
     const parkingCtx = document.getElementById('chart-parking');
@@ -123,6 +135,11 @@ export function initTransportCharts() {
   });
 }
 
+/**
+ * Initialises the Vendor Operations Chart.js instance showing per-stall
+ * inventory percentage and queue wait times side-by-side.
+ * @returns {void}
+ */
 export function initVendorChart() {
   runChartBoundary('vendor', () => {
     const vendorCtx = document.getElementById('chart-vendor');
@@ -142,6 +159,11 @@ export function initVendorChart() {
   });
 }
 
+/**
+ * Initialises Chart.js instances for the Sustainability view:
+ * energy breakdown doughnut chart and match-over-match carbon reduction bar.
+ * @returns {void}
+ */
 export function initSustainabilityCharts() {
   runChartBoundary('energyBreakdown', () => {
     const energyBreakdownCtx = document.getElementById('chart-sustainability-energy');
@@ -172,6 +194,11 @@ export function initSustainabilityCharts() {
   });
 }
 
+/**
+ * Initialises the Tournament Staff Chart.js instance showing a stacked bar
+ * of security, volunteer, and medical personnel counts per deployment zone.
+ * @returns {void}
+ */
 export function initStaffChart() {
   runChartBoundary('staff', () => {
     const staffCtx = document.getElementById('chart-staff');

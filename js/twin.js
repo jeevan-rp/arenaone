@@ -2,6 +2,13 @@ import * as THREE from 'https://unpkg.com/three@0.160.0?module';
 import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js?module';
 import { stateManager } from './state.js';
 import { showToast } from './app.js';
+import {
+  WEBGL_MAX_PIXEL_RATIO,
+  WEBGL_CROWD_COUNT,
+  WEBGL_FULL_CROWD_COUNT,
+  WEBGL_INIT_DELAY_MS,
+  WEBGL_RESIZE_RETRY_MS,
+} from './constants.js';
 
 /* ============================
    THREE.JS — 3D DIGITAL TWIN
@@ -81,17 +88,30 @@ function runWebGLBoundary(operation, fn) {
 function displayRecoveryOverlay(containerId, show) {
   const container = document.getElementById(containerId);
   if (!container) return;
-  
+
   let overlay = container.querySelector('.webgl-recovery-overlay');
   if (show) {
     if (!overlay) {
       overlay = document.createElement('div');
       overlay.className = 'webgl-recovery-overlay absolute inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center text-center z-40 p-4 transition-all duration-300';
-      overlay.innerHTML = `
-        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-cyan mb-4"></div>
-        <div class="text-sm font-semibold text-white mb-1">3D Graphics Context Lost</div>
-        <div class="text-xs text-slate-400">Rebuilding WebGL graphics pipelines, please wait...</div>
-      `;
+      overlay.setAttribute('role', 'status');
+      overlay.setAttribute('aria-live', 'polite');
+
+      const spinner = document.createElement('div');
+      spinner.className = 'animate-spin rounded-full h-10 w-10 border-b-2 border-cyan mb-4';
+      spinner.setAttribute('aria-hidden', 'true');
+
+      const title = document.createElement('div');
+      title.className = 'text-sm font-semibold text-white mb-1';
+      title.textContent = '3D Graphics Context Lost';
+
+      const subtitle = document.createElement('div');
+      subtitle.className = 'text-xs text-slate-400';
+      subtitle.textContent = 'Rebuilding WebGL graphics pipelines, please wait...';
+
+      overlay.appendChild(spinner);
+      overlay.appendChild(title);
+      overlay.appendChild(subtitle);
       container.appendChild(overlay);
     }
   } else if (overlay) {
@@ -99,13 +119,19 @@ function displayRecoveryOverlay(containerId, show) {
   }
 }
 
+/**
+ * Initialises the command-view Three.js scene.
+ * Creates the WebGL renderer, stadium geometry, crowd particle system, and
+ * starts the animation loop. Retries automatically if the container is unsized.
+ * @returns {void}
+ */
 export function init3D() {
   if (threeInit) return;
   const container = document.getElementById('three-container');
   if (!container) return;
   const w = container.clientWidth, h = container.clientHeight;
   if (w < 10 || h < 10) {
-    setTimeout(init3D, 200);
+    setTimeout(init3D, WEBGL_RESIZE_RETRY_MS);
     return;
   }
   threeInit = true;
@@ -119,7 +145,7 @@ export function init3D() {
 
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(w, h);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, WEBGL_MAX_PIXEL_RATIO));
     renderer.setClearColor(0x060b18, 1);
     
     // Clear previous canvases if any to prevent memory leaks
@@ -175,7 +201,7 @@ export function init3D() {
     stadiumGroup.add(lowerMesh);
 
     // Crowd particles with ShaderMaterial & dynamic color uniforms
-    const crowdCount = 6000;
+    const crowdCount = WEBGL_CROWD_COUNT;
     const crowdGeo = new THREE.BufferGeometry();
     const positions = new Float32Array(crowdCount * 3);
     const colors = new Float32Array(crowdCount * 3);
@@ -221,6 +247,12 @@ export function init3D() {
   });
 }
 
+/**
+ * Three.js animation loop for the command-view scene.
+ * Updates shader uniforms for time and color interpolation each frame.
+ * @param {number} [time=0] - High-resolution timestamp provided by requestAnimationFrame.
+ * @returns {void}
+ */
 export function animate3D(time = 0) {
   requestAnimationFrame(animate3D);
   if (!renderer || !scene || !camera) return;
@@ -240,13 +272,19 @@ export function animate3D(time = 0) {
   });
 }
 
+/**
+ * Initialises the full-screen Digital Twin Three.js scene.
+ * Activated when the user navigates to the Digital Twin view.
+ * Creates a higher-density crowd particle system and a dedicated renderer.
+ * @returns {void}
+ */
 export function initFull3D() {
   if (fullThreeInit) return;
   const container = document.getElementById('three-container-full');
   if (!container) return;
   const w = container.clientWidth, h = container.clientHeight;
   if (w < 10 || h < 10) {
-    setTimeout(initFull3D, 200);
+    setTimeout(initFull3D, WEBGL_RESIZE_RETRY_MS);
     return;
   }
   fullThreeInit = true;
@@ -260,7 +298,7 @@ export function initFull3D() {
 
     fullRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     fullRenderer.setSize(w, h);
-    fullRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    fullRenderer.setPixelRatio(Math.min(window.devicePixelRatio, WEBGL_MAX_PIXEL_RATIO));
     fullRenderer.setClearColor(0x060b18, 1);
     
     container.querySelectorAll('canvas').forEach(c => c.remove());
@@ -294,7 +332,7 @@ export function initFull3D() {
     const grp = new THREE.Group();
     fullScene.add(grp);
 
-    const fc = 10000;
+    const fc = WEBGL_FULL_CROWD_COUNT;
     const fcGeo = new THREE.BufferGeometry();
     const fcPos = new Float32Array(fc * 3);
     const fcCol = new Float32Array(fc * 3);
@@ -352,7 +390,7 @@ window.toggle3DLayer = function(layer) {
 };
 
 // Automatic 3D initialization triggers
-setTimeout(init3D, 2500);
+setTimeout(init3D, WEBGL_INIT_DELAY_MS);
 
 /* ============================
    RESIZE & EVENT HANDLERS

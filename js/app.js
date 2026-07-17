@@ -1,5 +1,18 @@
 import { stateManager } from './state.js';
 import { TelemetryService } from './telemetry.js';
+import {
+  LOADING_STEP_MS,
+  LOADING_HIDE_DELAY_MS,
+  TOAST_DURATION_MS,
+  ALERT_DISPATCH_INTERVAL_MS,
+  MAX_ALERT_HISTORY,
+  SIM_BASE_OCCUPANCY,
+  SIM_OCCUPANCY_AMPLITUDE,
+  SIM_BASE_DENSITY,
+  SIM_DENSITY_AMPLITUDE,
+  SIM_BASE_HEALTH,
+  SIM_HEALTH_AMPLITUDE,
+} from './constants.js';
 
 /**
  * @typedef {Object} KPIState
@@ -69,9 +82,9 @@ function animateLoading() {
       if (loadStatus) loadStatus.textContent = loadingMessages[loadProgress];
       if (loadFill) loadFill.style.width = ((loadProgress + 1) / loadingMessages.length * 100) + '%';
       loadProgress++;
-      setTimeout(animateLoading, 100);
+      setTimeout(animateLoading, LOADING_STEP_MS);
     } else {
-      setTimeout(() => { if (loadScreen) loadScreen.classList.add('hidden'); }, 300);
+      setTimeout(() => { if (loadScreen) loadScreen.classList.add('hidden'); }, LOADING_HIDE_DELAY_MS);
     }
   });
 }
@@ -111,13 +124,13 @@ export function showToast(msg, type = 'info') {
   toast.className = `toast ${colors[type] || colors.info}`;
   toast.textContent = msg;
   container.appendChild(toast);
-  
+
   const announcer = document.getElementById('sr-announcer');
   if (announcer) {
     announcer.textContent = `${type.toUpperCase()}: ${msg}`;
   }
-  
-  setTimeout(() => toast.remove(), 4000);
+
+  setTimeout(() => toast.remove(), TOAST_DURATION_MS);
 }
 window.showToast = showToast;
 
@@ -206,14 +219,14 @@ document.addEventListener('DOMContentLoaded', () => {
 let tickCount = 0;
 
 export function simulateCrowdDynamics(t) {
-  const occupancy = 87 + Math.sin(t * 0.05) * 1.5;
-  const density = 73 + Math.cos(t * 0.08) * 3;
-  const health = 94 - Math.sin(t * 0.03) * 0.8;
-  
+  const occupancy = SIM_BASE_OCCUPANCY + Math.sin(t * 0.05) * SIM_OCCUPANCY_AMPLITUDE;
+  const density   = SIM_BASE_DENSITY   + Math.cos(t * 0.08) * SIM_DENSITY_AMPLITUDE;
+  const health    = SIM_BASE_HEALTH    - Math.sin(t * 0.03) * SIM_HEALTH_AMPLITUDE;
+
   return {
     occupancy: Math.min(100, Math.max(0, occupancy)),
-    density: Math.min(100, Math.max(0, density)),
-    health: Math.min(100, Math.max(0, health))
+    density:   Math.min(100, Math.max(0, density)),
+    health:    Math.min(100, Math.max(0, health))
   };
 }
 
@@ -307,14 +320,14 @@ setInterval(() => {
     ];
     const alertIndex = tickCount % newAlertsList.length;
     const alert = { ...newAlertsList[alertIndex], time: 'Just now' };
-    
+
     const alerts = stateManager.get('alerts') || [];
     alerts.unshift(alert);
-    if (alerts.length > 10) alerts.pop();
+    if (alerts.length > MAX_ALERT_HISTORY) alerts.pop();
     stateManager.set('alerts', alerts);
     renderAlerts();
   });
-}, 15000);
+}, ALERT_DISPATCH_INTERVAL_MS);
 
 /* ============================
    NAVIGATION & ACCESSIBILITY HANDLER

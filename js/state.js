@@ -1,9 +1,9 @@
 // Decoupled encrypted state management module for ArenaOne
 import { defaultState } from './config.js';
+import { STATE_EXPIRATION_MS, PBKDF2_ITERATIONS } from './constants.js';
 
 const STATE_KEY = 'arenaone_state';
 const TIMESTAMP_KEY = 'arenaone_state_timestamp';
-const EXPIRATION_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 let cryptoKey = null;
 
@@ -43,7 +43,7 @@ async function getCryptoKey() {
     {
       name: 'PBKDF2',
       salt: salt,
-      iterations: 10000,
+      iterations: PBKDF2_ITERATIONS,
       hash: 'SHA-256'
     },
     keyMaterial,
@@ -97,7 +97,7 @@ class StateManager {
       const storedTime = localStorage.getItem(TIMESTAMP_KEY);
       const now = Date.now();
 
-      if (storedTime && now - parseInt(storedTime, 10) > EXPIRATION_MS) {
+      if (storedTime && now - parseInt(storedTime, 10) > STATE_EXPIRATION_MS) {
         console.warn('ArenaOne state data expired. Reverting to defaultState.');
         this._clearStoredState();
         return;
