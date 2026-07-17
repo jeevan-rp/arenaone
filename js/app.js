@@ -9,25 +9,35 @@ import { TelemetryService } from './telemetry.js';
  * @property {number} health General stadium health index.
  */
 
-/* ============================
-   ERROR BOUNDARY HELPER
-   ============================ */
-function runWithBoundary(panelName, fn) {
+export function runWithBoundary(panelName, containerOrFn, fn) {
+  let targetFn = fn;
+  let containerId = null;
+  if (typeof containerOrFn === 'function') {
+    targetFn = containerOrFn;
+  } else {
+    containerId = containerOrFn;
+  }
+
   try {
-    fn();
+    targetFn();
   } catch (error) {
     console.error(`[Error Boundary - ${panelName}] Error caught:`, error);
     showToast(`Error loading ${panelName}. Retrying...`, 'error');
     
-    const fallbacks = {
+    const fallbackId = containerId || {
       'Insights Feed': 'insights-list',
       'Alerts Feed': 'alerts-feed'
-    };
-    const elementId = fallbacks[panelName];
-    if (elementId) {
-      const el = document.getElementById(elementId);
+    }[panelName];
+    
+    if (fallbackId) {
+      const el = document.getElementById(fallbackId);
       if (el) {
-        el.innerHTML = `<div class="text-xs text-red p-2 border border-red/20 rounded">Failed to load ${panelName}. Please refresh.</div>`;
+        el.innerHTML = `
+          <div class="glass p-4 text-center border-red/20 border" role="alert">
+            <i class="fa-solid fa-triangle-exclamation text-red text-lg mb-2" aria-hidden="true"></i>
+            <div class="text-xs text-white font-semibold mb-1">Failed to load ${panelName}</div>
+            <div class="text-[10px] text-slate-500">A rendering boundary caught a local module exception. Please try refreshing.</div>
+          </div>`;
       }
     }
   }

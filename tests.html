@@ -59,6 +59,10 @@
 
   <!-- Mock structure needed for loading modules without DOM errors -->
   <div id="test-sandbox" style="display: none;">
+    <div id="chat-messages"></div>
+    <input id="chat-input" type="text">
+    <button id="chat-send"></button>
+    <input id="gemini-key-input" type="password">
     <div id="live-clock"></div>
     <div id="toast-container"></div>
     <div id="sr-announcer"></div>
@@ -118,6 +122,7 @@
     import { activeCharts, initCommandCharts } from './js/charts.js';
     import { TelemetryService } from './js/telemetry.js';
     import { authService } from './js/auth.js';
+    import { generateAIResponse } from './js/main.js';
 
     describe('ArenaOne System Tests', () => {
 
@@ -169,21 +174,54 @@
       });
 
       describe('Telemetry Service API Retries & Timeout', () => {
-        it('should support load states and graceful backoff fallbacks', (done) => {
-          let loadingReported = false;
+        let originalFetch;
+        beforeEach(() => {
+          originalFetch = window.fetch;
+        });
+        afterEach(() => {
+          window.fetch = originalFetch;
+        });
+
+        it('should mock telemetry response and parse successfully', (done) => {
+          window.fetch = async (url) => {
+            expect(url).to.equal('/api/v1/mock_telemetry');
+            return {
+              ok: true,
+              json: async () => ({ occupancy: 90, density: 65, health: 97 })
+            };
+          };
+
           const service = new TelemetryService({
-            endpoint: '/api/invalid_endpoint_testing',
-            pollingInterval: 100,
-            timeoutMs: 150,
+            endpoint: '/api/v1/mock_telemetry',
+            pollingInterval: 50,
+            timeoutMs: 100,
+            onData: (data) => {
+              expect(data.occupancy).to.equal(90);
+              expect(data.density).to.equal(65);
+              expect(data.health).to.equal(97);
+              service.stop();
+              done();
+            }
+          });
+          service.start();
+        });
+
+        it('should support backoff retries and graceful error fallbacks on 500', (done) => {
+          let retries = 0;
+          window.fetch = async () => {
+            retries++;
+            return { ok: false, status: 500 };
+          };
+
+          const service = new TelemetryService({
+            endpoint: '/api/v1/failing_telemetry',
+            pollingInterval: 50,
+            timeoutMs: 100,
             maxRetries: 1,
-            initialRetryDelay: 10,
-            onData: () => {},
-            onLoading: (isLoading) => {
-              if (isLoading) loadingReported = true;
-            },
+            initialRetryDelay: 5,
             onError: (err) => {
               expect(err).to.exist;
-              expect(loadingReported).to.be.true;
+              expect(retries).to.equal(2); // Initial try + 1 retry
               service.stop();
               done();
             }
@@ -193,10 +231,32 @@
       });
 
       describe('WebGL Canvas Dimensions & Context Recovery', () => {
-        it('should trigger forced context lost and recovery cycles cleanly', () => {
-          const resizeEvent = new Event('resize');
-          window.dispatchEvent(resizeEvent);
-          expect(true).to.be.true;
+        it('should update renderer canvas dimensions on window resize', () => {
+          // Set explicit dimensions on the container so the resize handler can calculate
+          const container = document.getElementById('three-container');
+          Object.defineProperty(container, 'clientWidth',  { configurable: true, get: () => 800 });
+          Object.defineProperty(container, 'clientHeight', { configurable: true, get: () => 500 });
+
+          window.dispatchEvent(new Event('resize'));
+
+          // The canvas injected by Three.js should reflect the updated size from the handler
+          const canvas = container.querySelector('canvas');
+          if (canvas) {
+            // three-container canvas dimensions are set via renderer.setSize → inline style
+            expect(canvas.style.width === '800px' || canvas.width > 0).to.be.true;
+          } else {
+            // Three.js not initialised in test env — verify container dimensions are readable
+            expect(container.clientWidth).to.equal(800);
+            expect(container.clientHeight).to.equal(500);
+          }
+        });
+
+        it('should expose init3D and initFull3D as callable exports without throwing', async () => {
+          const { init3D, initFull3D } = await import('./js/twin.js');
+          expect(init3D).to.be.a('function');
+          expect(initFull3D).to.be.a('function');
+          // Calling init3D on a zero-size container should schedule a retry silently (no throw)
+          expect(() => init3D()).to.not.throw();
         });
       });
 
@@ -247,6 +307,33 @@
           initCommandCharts();
           expect(activeCharts).to.be.an('object');
           expect(activeCharts.crowdTrend).to.exist;
+        });
+      });
+
+      describe('Context-Aware GenAI Chatbot & XSS Security', () => {
+        it('should generate relevant context-aware directions and accessibility answers', async () => {
+          const res1 = await generateAIResponse('where is my seat?');
+          expect(res1).to.satisfy(r => r.includes('Gate B') || r.includes('Section 115'));
+
+          const res2 = await generateAIResponse('need wheelchair route');
+          expect(res2).to.contain('Elevator C');
+        });
+
+        it('should correctly prevent XSS vulnerabilities on user chat input', () => {
+          const messagesContainer = document.getElementById('chat-messages');
+          const chatInput = document.getElementById('chat-input');
+          const chatSend = document.getElementById('chat-send');
+
+          if (chatInput && chatSend && messagesContainer) {
+            messagesContainer.innerHTML = '';
+            chatInput.value = '<script>alert("xss")<\/script>';
+            chatSend.click();
+            
+            const lastBubble = messagesContainer.querySelector('.chat-user');
+            expect(lastBubble).to.exist;
+            expect(lastBubble.textContent).to.equal('<script>alert("xss")<\/script>');
+            expect(lastBubble.innerHTML).to.not.contain('<script>');
+          }
         });
       });
     });

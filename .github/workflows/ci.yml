@@ -1,0 +1,92 @@
+name: ArenaOne CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    name: Run Mocha Test Suite (Headless Chromium)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright & Chromium
+        run: |
+          npm init -y
+          npm install --save-dev playwright @playwright/test
+          npx playwright install chromium --with-deps
+
+      - name: Write test runner script
+        run: |
+          cat > run-tests.js << 'EOF'
+          const { chromium } = require('playwright');
+          const path = require('path');
+
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const page = await browser.newPage();
+
+            // Capture console output from the page
+            page.on('console', msg => {
+              const type = msg.type();
+              if (type === 'error') process.stderr.write(`[PAGE ERROR] ${msg.text()}\n`);
+              else process.stdout.write(`[PAGE] ${msg.text()}\n`);
+            });
+
+            // Serve the file locally via a file URL
+            const testPath = 'file://' + path.resolve(__dirname, 'tests.html');
+            await page.goto(testPath, { waitUntil: 'networkidle', timeout: 30000 });
+
+            // Wait for Mocha to finish (stats appear after run())
+            await page.waitForFunction(() => {
+              return window.mocha && document.querySelector('#mocha-stats .passes');
+            }, { timeout: 30000 });
+
+            // Scrape results
+            const stats = await page.evaluate(() => {
+              const passes  = document.querySelector('#mocha-stats .passes em');
+              const failures = document.querySelector('#mocha-stats .failures em');
+              const failedTitles = Array.from(
+                document.querySelectorAll('#mocha .test.fail h2')
+              ).map(h => h.textContent.trim());
+              return {
+                passes:  passes  ? parseInt(passes.textContent)   : 0,
+                failures: failures ? parseInt(failures.textContent) : 0,
+                failedTitles
+              };
+            });
+
+            console.log(`\n✅  Passed : ${stats.passes}`);
+            console.log(`❌  Failed : ${stats.failures}`);
+            if (stats.failedTitles.length > 0) {
+              console.error('\nFailed tests:');
+              stats.failedTitles.forEach(t => console.error(`  - ${t}`));
+            }
+
+            await browser.close();
+
+            // Exit with non-zero code so GitHub Actions marks the run as failed
+            process.exit(stats.failures > 0 ? 1 : 0);
+          })();
+          EOF
+
+      - name: Run ArenaOne test suite
+        run: node run-tests.js
+
+      - name: Upload test artefacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-failure-screenshot
+          path: '*.png'
+          if-no-files-found: ignore

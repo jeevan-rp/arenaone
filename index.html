@@ -156,7 +156,10 @@
           </div>
         </div>
         <div class="grid grid-cols-5 gap-3 mb-4">
-          <div class="col-span-3 glass glow-border p-0" style="min-height:380px;position:relative" id="three-container">
+          <div class="col-span-3 glass glow-border p-0" style="min-height:380px;position:relative" id="three-container"
+            role="img"
+            aria-label="Interactive 3D digital twin of MetLife Stadium showing live crowd particle simulation. Use mouse to rotate and scroll to zoom."
+          >
             <div class="absolute top-3 left-3 z-10 flex items-center gap-2">
               <span class="text-[10px] font-display tracking-wider text-cyan bg-black/40 px-2 py-1 rounded">DIGITAL TWIN</span>
               <span class="text-[9px] text-slate-500 bg-black/40 px-2 py-1 rounded">LIVE</span>
@@ -202,7 +205,10 @@
         </div>
         <div class="grid grid-cols-3 gap-3 mb-4">
           <div class="col-span-2 glass p-0 relative" style="min-height:400px">
-            <canvas id="heatmap-canvas" class="heatmap-canvas w-full h-full" style="min-height:400px"></canvas>
+            <canvas id="heatmap-canvas" class="heatmap-canvas w-full h-full" style="min-height:400px"
+              role="img"
+              aria-label="Live crowd density heatmap for MetLife Stadium. Colors represent zone congestion: green is low density, amber is medium, red is high."
+            ></canvas>
             <div class="absolute top-3 left-3 text-[10px] font-display tracking-wider text-cyan bg-black/50 px-2 py-1 rounded">CROWD HEATMAP — LIVE</div>
             <div class="absolute bottom-3 right-3 flex items-center gap-3 text-[9px]">
               <span class="flex items-center gap-1"><span class="w-3 h-2 rounded-sm" style="background:rgba(0,255,136,0.5)"></span>Low</span>
@@ -383,7 +389,10 @@
       <div class="view" id="view-digital-twin">
         <div class="mb-4"><h2 class="font-display text-lg text-white tracking-wide">Digital Twin</h2><p class="text-xs text-slate-500 mt-1">Interactive 3D stadium model with real-time overlays</p></div>
         <div class="glass glow-border p-0 relative" style="height:calc(100vh - 200px)">
-          <div id="three-container-full" style="width:100%;height:100%;border-radius:12px"></div>
+          <div id="three-container-full" style="width:100%;height:100%;border-radius:12px"
+            role="img"
+            aria-label="Full-screen interactive 3D digital twin of MetLife Stadium with real-time crowd, security, medical, and transport overlays."
+          ></div>
           <div class="absolute top-3 left-3 z-10 flex gap-2" id="twin-layer-controls">
             <button class="text-[10px] font-display tracking-wider text-white bg-black/50 hover:bg-cyan/20 px-3 py-1.5 rounded border border-white/10 transition-all" data-layer="crowd">Crowd</button>
             <button class="text-[10px] font-display tracking-wider text-white bg-black/50 hover:bg-cyan/20 px-3 py-1.5 rounded border border-white/10 transition-all" data-layer="security">Security</button>
@@ -400,11 +409,13 @@
           <div class="p-3 border-b border-white/5 flex items-center gap-3">
             <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background:linear-gradient(135deg,var(--cyan),var(--green))"><i class="fa-solid fa-robot text-xs text-black" aria-hidden="true"></i></div>
             <div><div class="text-xs font-semibold text-white">ArenaOne Assistant</div><div class="text-[10px] text-green">Online — 8 languages</div></div>
-            <div class="ml-auto flex gap-1" id="language-switcher">
+            <div class="ml-auto flex items-center gap-1.5" id="language-switcher">
               <button class="lang-btn text-[9px] px-2 py-0.5 rounded bg-cyan/10 text-cyan border border-cyan/20" data-lang="en-US">EN</button>
               <button class="lang-btn text-[9px] px-2 py-0.5 rounded bg-white/5 text-slate-400" data-lang="es-ES">ES</button>
               <button class="lang-btn text-[9px] px-2 py-0.5 rounded bg-white/5 text-slate-400" data-lang="pt-PT">PT</button>
               <button class="lang-btn text-[9px] px-2 py-0.5 rounded bg-white/5 text-slate-400" data-lang="fr-FR">FR</button>
+              <div class="h-4 w-px bg-white/10 mx-0.5"></div>
+              <input type="password" id="gemini-key-input" class="bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[8px] text-white w-20 placeholder:text-slate-600 outline-none focus:border-cyan/30" placeholder="Gemini API Key..." title="Optional Gemini API Key for Live GenAI">
             </div>
           </div>
           <div class="flex-1 overflow-y-auto p-4 space-y-3" id="chat-messages"></div>
