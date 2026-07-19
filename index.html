@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.tailwindcss.com https://unpkg.com; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.tailwindcss.com https://unpkg.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; child-src 'self' blob:; worker-src 'self' blob:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.tailwindcss.com https://unpkg.com; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' https://generativelanguage.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; child-src 'self' blob:; worker-src 'self' blob:;">
   
   <!-- SEO Optimization Meta Tags -->
   <title>ArenaOne – AI Command Center | FIFA World Cup 2026</title>
@@ -30,8 +30,8 @@
 <body>
 
   <!-- OAuth Login Screen Overlay -->
-  <div id="login-overlay" style="display: none;" class="fixed inset-0 z-[99999] bg-[#060b18]/95 backdrop-blur-lg flex flex-col items-center justify-center p-6 text-center">
-    <div class="font-display text-4xl gradient-text tracking-widest mb-2 font-black">ARENAONE</div>
+  <div id="login-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="login-overlay-title" class="fixed inset-0 z-[99999] bg-[#060b18]/95 backdrop-blur-lg flex flex-col items-center justify-center p-6 text-center">
+    <div id="login-overlay-title" class="font-display text-4xl gradient-text tracking-widest mb-2 font-black">ARENAONE</div>
     <div class="text-sm text-cyan/80 font-display tracking-widest uppercase mb-8">Secure Venue Staff Portal</div>
     <div class="glass p-6 max-w-sm w-full border-cyan/20">
       <h2 class="text-white text-xs font-semibold mb-4">Select Staff Role to Sign In (OAuth 2.0 PKCE)</h2>
@@ -40,7 +40,7 @@
         <button class="oauth-login-btn w-full py-2.5 rounded-lg bg-green/15 hover:bg-green/25 border border-green/30 text-green text-xs font-semibold tracking-wider transition-all" data-role="Supervisor">Supervisor Portal</button>
         <button class="oauth-login-btn w-full py-2.5 rounded-lg bg-amber/15 hover:bg-amber/25 border border-amber/30 text-amber text-xs font-semibold tracking-wider transition-all" data-role="Administrator">Administrator Console</button>
       </div>
-      <p class="text-[10px] text-slate-500 mt-4"><i class="fa-solid fa-lock mr-1"></i>Secure authorization token refresh enabled.</p>
+      <p class="text-[10px] text-slate-500 mt-4"><i class="fa-solid fa-lock mr-1" aria-hidden="true"></i>Secure authorization token refresh enabled.</p>
     </div>
   </div>
 
@@ -129,7 +129,7 @@
     </aside>
 
     <!-- Main Content -->
-    <main id="main-content">
+    <main id="main-content" tabindex="-1">
 
       <!-- COMMAND CENTER VIEW -->
       <div class="view active" id="view-command">
@@ -394,10 +394,10 @@
             aria-label="Full-screen interactive 3D digital twin of MetLife Stadium with real-time crowd, security, medical, and transport overlays."
           ></div>
           <div class="absolute top-3 left-3 z-10 flex gap-2" id="twin-layer-controls">
-            <button class="text-[10px] font-display tracking-wider text-white bg-black/50 hover:bg-cyan/20 px-3 py-1.5 rounded border border-white/10 transition-all" data-layer="crowd">Crowd</button>
-            <button class="text-[10px] font-display tracking-wider text-white bg-black/50 hover:bg-cyan/20 px-3 py-1.5 rounded border border-white/10 transition-all" data-layer="security">Security</button>
-            <button class="text-[10px] font-display tracking-wider text-white bg-black/50 hover:bg-cyan/20 px-3 py-1.5 rounded border border-white/10 transition-all" data-layer="medical">Medical</button>
-            <button class="text-[10px] font-display tracking-wider text-white bg-black/50 hover:bg-cyan/20 px-3 py-1.5 rounded border border-white/10 transition-all" data-layer="transport">Transport</button>
+            <button class="text-[10px] font-display tracking-wider text-white bg-black/50 hover:bg-cyan/20 px-3 py-1.5 rounded border border-white/10 transition-all" data-layer="crowd" aria-label="Toggle crowd layer" tabindex="0">Crowd</button>
+            <button class="text-[10px] font-display tracking-wider text-white bg-black/50 hover:bg-cyan/20 px-3 py-1.5 rounded border border-white/10 transition-all" data-layer="security" aria-label="Toggle security layer" tabindex="0">Security</button>
+            <button class="text-[10px] font-display tracking-wider text-white bg-black/50 hover:bg-cyan/20 px-3 py-1.5 rounded border border-white/10 transition-all" data-layer="medical" aria-label="Toggle medical layer" tabindex="0">Medical</button>
+            <button class="text-[10px] font-display tracking-wider text-white bg-black/50 hover:bg-cyan/20 px-3 py-1.5 rounded border border-white/10 transition-all" data-layer="transport" aria-label="Toggle transport layer" tabindex="0">Transport</button>
           </div>
         </div>
       </div>
@@ -409,13 +409,17 @@
           <div class="p-3 border-b border-white/5 flex items-center gap-3">
             <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background:linear-gradient(135deg,var(--cyan),var(--green))"><i class="fa-solid fa-robot text-xs text-black" aria-hidden="true"></i></div>
             <div><div class="text-xs font-semibold text-white">ArenaOne Assistant</div><div class="text-[10px] text-green">Online — 8 languages</div></div>
-            <div class="ml-auto flex items-center gap-1.5" id="language-switcher">
-              <button class="lang-btn text-[9px] px-2 py-0.5 rounded bg-cyan/10 text-cyan border border-cyan/20" data-lang="en-US">EN</button>
-              <button class="lang-btn text-[9px] px-2 py-0.5 rounded bg-white/5 text-slate-400" data-lang="es-ES">ES</button>
-              <button class="lang-btn text-[9px] px-2 py-0.5 rounded bg-white/5 text-slate-400" data-lang="pt-PT">PT</button>
-              <button class="lang-btn text-[9px] px-2 py-0.5 rounded bg-white/5 text-slate-400" data-lang="fr-FR">FR</button>
+            <div class="ml-auto flex items-center gap-1.5 flex-wrap" id="language-switcher" role="tablist" aria-label="Language Selector">
+              <button class="lang-btn text-[9px] px-2 py-0.5 rounded bg-cyan/10 text-cyan border border-cyan/20" data-lang="en-US" role="tab" aria-selected="true" aria-label="English Language" tabindex="0">EN</button>
+              <button class="lang-btn text-[9px] px-2 py-0.5 rounded bg-white/5 text-slate-400" data-lang="es-ES" role="tab" aria-selected="false" aria-label="Spanish Language" tabindex="0">ES</button>
+              <button class="lang-btn text-[9px] px-2 py-0.5 rounded bg-white/5 text-slate-400" data-lang="pt-PT" role="tab" aria-selected="false" aria-label="Portuguese Language" tabindex="0">PT</button>
+              <button class="lang-btn text-[9px] px-2 py-0.5 rounded bg-white/5 text-slate-400" data-lang="fr-FR" role="tab" aria-selected="false" aria-label="French Language" tabindex="0">FR</button>
+              <button class="lang-btn text-[9px] px-2 py-0.5 rounded bg-white/5 text-slate-400" data-lang="de-DE" role="tab" aria-selected="false" aria-label="German Language" tabindex="0">DE</button>
+              <button class="lang-btn text-[9px] px-2 py-0.5 rounded bg-white/5 text-slate-400" data-lang="ar-SA" role="tab" aria-selected="false" aria-label="Arabic Language" tabindex="0">AR</button>
+              <button class="lang-btn text-[9px] px-2 py-0.5 rounded bg-white/5 text-slate-400" data-lang="zh-CN" role="tab" aria-selected="false" aria-label="Chinese Language" tabindex="0">ZH</button>
+              <button class="lang-btn text-[9px] px-2 py-0.5 rounded bg-white/5 text-slate-400" data-lang="ja-JP" role="tab" aria-selected="false" aria-label="Japanese Language" tabindex="0">JA</button>
               <div class="h-4 w-px bg-white/10 mx-0.5"></div>
-              <input type="password" id="gemini-key-input" class="bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[8px] text-white w-20 placeholder:text-slate-600 outline-none focus:border-cyan/30" placeholder="Gemini API Key..." title="Optional Gemini API Key for Live GenAI">
+              <input type="password" id="gemini-key-input" class="bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[8px] text-white w-20 placeholder:text-slate-600 outline-none focus:border-cyan/30" placeholder="Gemini API Key..." title="Optional Gemini API Key for Live GenAI" aria-label="Gemini API Key">
             </div>
           </div>
           <div class="flex-1 overflow-y-auto p-4 space-y-3" id="chat-messages"></div>

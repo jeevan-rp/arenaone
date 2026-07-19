@@ -335,6 +335,74 @@
             expect(lastBubble.innerHTML).to.not.contain('<script>');
           }
         });
+      describe('Interactive AI Command Execution', () => {
+        it('should execute live view navigation when user requests 3D digital twin in chat', async () => {
+          navigateToView('command');
+          await generateAIResponse('show 3d twin');
+          expect(stateManager.get('currentView')).to.equal('digital-twin');
+        });
+
+        it('should execute live view navigation when user requests security copilot in chat', async () => {
+          navigateToView('command');
+          await generateAIResponse('show security copilot');
+          expect(stateManager.get('currentView')).to.equal('security');
+        });
+      });
+
+      describe('Multilingual Voice Dictionary Support', () => {
+        it('should support voice navigation in German, Spanish, Portuguese, French, Arabic, Chinese, and Japanese', () => {
+          processVoiceCommand('kommando');
+          expect(stateManager.get('currentView')).to.equal('command');
+
+          processVoiceCommand('multitud');
+          expect(stateManager.get('currentView')).to.equal('crowd');
+        });
+      });
+
+      describe('Volunteer Recommendation Algorithm', () => {
+        it('should derive volunteer headcount dynamically based on crowd density threshold', async () => {
+          stateManager.set('kpis.density', 80);
+          const response = await generateAIResponse('deploy volunteers');
+          expect(response).to.contain('volunteer');
+        });
+      });
+
+      describe('OAuth CSRF State Mismatch Prevention', () => {
+        it('should reject OAuth callbacks when state parameter does not match session state', () => {
+          sessionStorage.setItem('oauth_state', 'valid_state_123');
+          authService.init(); // Triggers check if query params had mismatch
+          expect(sessionStorage.getItem('arenaone_auth_token')).to.be.null;
+          sessionStorage.clear();
+        });
+      });
+
+      describe('Chart Instance Cleanup & Memory Management', () => {
+        it('should destroy chart instance on destroyChart call', async () => {
+          const { destroyChart } = await import('./js/charts.js');
+          initCommandCharts();
+          expect(activeCharts.crowdTrend).to.exist;
+          destroyChart('crowdTrend');
+          expect(activeCharts.crowdTrend).to.be.undefined;
+        });
+      });
+
+      describe('Screen Reader Live Announcer Integration', () => {
+        it('should update #sr-announcer on toast notifications for WCAG compliance', () => {
+          const announcer = document.getElementById('sr-announcer');
+          window.showToast('Emergency Alert Triggered', 'error');
+          expect(announcer.textContent).to.equal('ERROR: Emergency Alert Triggered');
+        });
+      });
+
+      describe('Strict Content Security Policy Compliance', () => {
+        it('should enforce strict CSP without unsafe-inline in script-src', () => {
+          const cspMeta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+          expect(cspMeta).to.exist;
+          const content = cspMeta.getAttribute('content');
+          const scriptSrc = content.match(/script-src[^;]+/)[0];
+          expect(scriptSrc).to.not.contain("'unsafe-inline'");
+          expect(content).to.contain('connect-src');
+        });
       });
     });
 

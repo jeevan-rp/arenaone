@@ -13,7 +13,7 @@ let recognition = null;
 let lastActiveElement = null;
 let currentLocale = 'en-US';
 
-// Localized Speech dictionaries
+// Localized Speech dictionaries supporting 8 FIFA World Cup 2026 operational languages
 const COMMAND_DICTIONARIES = {
   'en-US': {
     'command': 'command', 'center': 'command', 'overview': 'command',
@@ -70,6 +70,62 @@ const COMMAND_DICTIONARIES = {
     'jumeau': 'digital-twin', '3d': 'digital-twin',
     'accessibilité': 'accessibility',
     'tournoi': 'tournament', 'personnel': 'tournament',
+  },
+  'de-DE': {
+    'kommando': 'command', 'zentrum': 'command',
+    'menge': 'crowd', 'dichte': 'crowd',
+    'sicherheit': 'security', 'vorfall': 'security',
+    'notfall': 'emergency', 'medizinisch': 'emergency',
+    'transport': 'transport', 'parken': 'transport',
+    'anbieter': 'vendor', 'essen': 'vendor',
+    'nachhaltigkeit': 'sustainability', 'energie': 'sustainability',
+    'simulation': 'simulation', 'szenario': 'simulation',
+    'fan': 'fan', 'chat': 'fan',
+    'zwilling': 'digital-twin', '3d': 'digital-twin',
+    'barrierefreiheit': 'accessibility',
+    'turnier': 'tournament', 'personal': 'tournament',
+  },
+  'ar-SA': {
+    'امر': 'command', 'مركز': 'command',
+    'حشد': 'crowd', 'كثافة': 'crowd',
+    'أمن': 'security', 'حادث': 'security',
+    'طوارئ': 'emergency', 'طبي': 'emergency',
+    'نقل': 'transport', 'موقف': 'transport',
+    'متجر': 'vendor', 'طعام': 'vendor',
+    'استدامة': 'sustainability', 'طاقة': 'sustainability',
+    'محاكاة': 'simulation', 'سيناريو': 'simulation',
+    'مشجع': 'fan', 'محادثة': 'fan',
+    'توأم': 'digital-twin', 'ثلاثي': 'digital-twin',
+    'إمكانية': 'accessibility',
+    'بطولة': 'tournament', 'طاقم': 'tournament',
+  },
+  'zh-CN': {
+    '指挥': 'command', '中心': 'command',
+    '人群': 'crowd', '密度': 'crowd',
+    '安保': 'security', '事件': 'security',
+    '紧急': 'emergency', '医疗': 'emergency',
+    '交通': 'transport', '停车': 'transport',
+    '商家': 'vendor', '餐饮': 'vendor',
+    '可持续': 'sustainability', '能源': 'sustainability',
+    '模拟': 'simulation', '场景': 'simulation',
+    '球迷': 'fan', '助手': 'fan',
+    '孪生': 'digital-twin', '3d': 'digital-twin',
+    '无障碍': 'accessibility',
+    '赛事': 'tournament', '人员': 'tournament',
+  },
+  'ja-JP': {
+    'コマンド': 'command', 'センター': 'command',
+    '群集': 'crowd', '密度': 'crowd',
+    'セキュリティ': 'security', '警備': 'security',
+    '救急': 'emergency', '医療': 'emergency',
+    '交通': 'transport', '駐車場': 'transport',
+    '売店': 'vendor', 'フード': 'vendor',
+    '環境': 'sustainability', 'エネルギー': 'sustainability',
+    'シミュレーション': 'simulation', 'シナリオ': 'simulation',
+    'ファン': 'fan', 'チャット': 'fan',
+    'ツイン': 'digital-twin', '3d': 'digital-twin',
+    'バリアフリー': 'accessibility',
+    '大会': 'tournament', 'スタッフ': 'tournament',
   }
 };
 

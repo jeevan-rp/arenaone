@@ -45,12 +45,26 @@ export function runWithBoundary(panelName, containerOrFn, fn) {
     if (fallbackId) {
       const el = document.getElementById(fallbackId);
       if (el) {
-        el.innerHTML = `
-          <div class="glass p-4 text-center border-red/20 border" role="alert">
-            <i class="fa-solid fa-triangle-exclamation text-red text-lg mb-2" aria-hidden="true"></i>
-            <div class="text-xs text-white font-semibold mb-1">Failed to load ${panelName}</div>
-            <div class="text-[10px] text-slate-500">A rendering boundary caught a local module exception. Please try refreshing.</div>
-          </div>`;
+        const errDiv = document.createElement('div');
+        errDiv.className = 'glass p-4 text-center border-red/20 border';
+        errDiv.setAttribute('role', 'alert');
+
+        const icon = document.createElement('i');
+        icon.className = 'fa-solid fa-triangle-exclamation text-red text-lg mb-2';
+        icon.setAttribute('aria-hidden', 'true');
+
+        const title = document.createElement('div');
+        title.className = 'text-xs text-white font-semibold mb-1';
+        title.textContent = `Failed to load ${panelName}`;
+
+        const sub = document.createElement('div');
+        sub.className = 'text-[10px] text-slate-500';
+        sub.textContent = 'A rendering boundary caught a local module exception. Please try refreshing.';
+
+        errDiv.appendChild(icon);
+        errDiv.appendChild(title);
+        errDiv.appendChild(sub);
+        el.replaceChildren(errDiv);
       }
     }
   }

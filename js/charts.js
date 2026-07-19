@@ -20,6 +20,18 @@ const chartDefaults = {
 
 export let activeCharts = {};
 
+/**
+ * Destroys a specific Chart.js instance by key to prevent memory leaks.
+ * @param {string} chartName Name key of the chart in activeCharts.
+ * @returns {void}
+ */
+export function destroyChart(chartName) {
+  if (activeCharts[chartName]) {
+    activeCharts[chartName].destroy();
+    delete activeCharts[chartName];
+  }
+}
+
 /* ============================
    ERROR BOUNDARY HELPER
    ============================ */

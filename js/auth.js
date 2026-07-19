@@ -60,8 +60,11 @@ export class AuthService {
    */
   _handleCallback(code, state) {
     const savedState = sessionStorage.getItem('oauth_state');
-    if (savedState && savedState !== state) {
-      console.error('[AuthService] Invalid state mismatch detected!');
+    if (!savedState || savedState !== state) {
+      console.error('[AuthService] Invalid CSRF state mismatch detected! Aborting authentication.');
+      sessionStorage.removeItem('oauth_state');
+      sessionStorage.removeItem('oauth_code_verifier');
+      if (window.showToast) window.showToast('Security Alert: CSRF state mismatch. Authentication aborted.', 'error');
       return;
     }
 
@@ -167,7 +170,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (overlay) overlay.style.display = 'none';
     const user = authService.getUser();
     if (userRoleDisplay && user) {
-      userRoleDisplay.innerHTML = `<span class="text-cyan font-medium">${user.username}</span> (${user.role})`;
+      userRoleDisplay.textContent = '';
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'text-cyan font-medium';
+      nameSpan.textContent = user.username;
+      userRoleDisplay.appendChild(nameSpan);
+      userRoleDisplay.appendChild(document.createTextNode(` (${user.role})`));
     }
   } else {
     if (overlay) overlay.style.display = 'flex';
